@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>https://rcvalle.com/</id>
+  <link href="https://rcvalle.com"/>
+  <link href="https://rcvalle.com/atom.xml" rel="self"/>
+  
+  <subtitle>I'm a vulnerability researcher at Google. This is my personal website where I
+write about vulnerability research and mitigations development.
+</subtitle>
+  <title>rcvalle</title>
+  <updated>2020-09-16T00:00:00-07:00</updated>
+  
+    <entry>
+      <author>
+        <name>Ramon de C Valle</name>
+      </author>
+      
+        <category term="Security"/>
+      
+      <content type="html">
+        &lt;p class=&quot;lead&quot;&gt;The contents of this post are now part of the official Rust documentation
+as &lt;a href=&quot;https://doc.rust-lang.org/nightly/rustc/exploit-mitigations.html&quot;&gt;part of the The rustc
+book&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The Rust programming language provides memory[1] and thread[2] safety
+guarantees via its ownership[3], references and borrowing[4], and slice
+types[5] features. However, Unsafe Rust[6] introduces unsafe blocks, unsafe
+functions and methods, unsafe traits, and new types that are not subject to
+the borrowing rules.&lt;/p&gt;
+
+&lt;p&gt;Parts of the Rust standard library are implemented as safe abstractions over
+unsafe code (and historically have been vulnerable to memory corruption[7]).
+Furthermore, the Rust code and documentation encourage creating safe
+abstractions over unsafe code. This can cause a false sense of security if
+unsafe code is not properly reviewed and tested.&lt;/p&gt;
+
+&lt;p&gt;Unsafe Rust introduces features that do not provide the same memory and
+thread safety guarantees. This causes programs or libraries to be
+susceptible to memory corruption (CWE-119)[8] and concurrency issues
+(CWE-557)[9]. Modern C and C++ compilers provide exploit mitigations to
+increase the difficulty to exploit vulnerabilities resulting from these
+issues. Therefore, the Rust compiler must also support these exploit
+mitigations in order to mitigate vulnerabilities resulting from the use of
+Unsafe Rust. This post documents these exploit mitigations and how they
+apply to Rust.&lt;/p&gt;
+
+&lt;!-- more --&gt;
+
+&lt;h2 id=&quot;exploit-mitigations&quot;&gt;Exploit mitigations&lt;/h2&gt;
+
+&lt;p&gt;This section documents the exploit mitigations applicable to the Rust
+compiler when building programs for the Linux operating system on the AMD64
+architecture and equivalent.&lt;sup id=&quot;fnref:1&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:1&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; All examples in this section were
+built using the Rust compiler version 1.40.0 (2019-12-19) on Debian testing
+(Bullseye).&lt;/p&gt;
+
+&lt;p&gt;The Rust Programming Language currently has no specification. The Rust
+compiler (i.e., rustc) is the language reference implementation. All
+references to “the Rust compiler” in this post refer to the language
+reference implementation.&lt;/p&gt;
+
+&lt;p class=&quot;table-title&quot;&gt;Table I &lt;br /&gt;
+Summary of exploit mitigations supported by the Rust compiler when building
+programs for the Linux operating system on the AMD64 architecture and
+equivalent.&lt;/p&gt;
+&lt;table class=&quot;table&quot;&gt;
+  &lt;tr&gt;
+   &lt;td&gt;&lt;strong&gt;Exploit mitigation&lt;/strong&gt;
+   &lt;/td&gt;
+   &lt;td&gt;&lt;strong&gt;Supported and enabled by default&lt;/strong&gt;
+   &lt;/td&gt;
+   &lt;td&gt;&lt;strong&gt;Since&lt;/strong&gt;
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Position-independent executable
+   &lt;/td&gt;
+   &lt;td&gt;Yes
+   &lt;/td&gt;
+   &lt;td&gt;0.12.0 (2014-10-09)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Integer overflow checks
+   &lt;/td&gt;
+   &lt;td&gt;Yes (enabled when debug assertions are enabled, and disabled when debug assertions are disabled)
+   &lt;/td&gt;
+   &lt;td&gt;1.1.0 (2015-06-25)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Non-executable memory regions
+   &lt;/td&gt;
+   &lt;td&gt;Yes
+   &lt;/td&gt;
+   &lt;td&gt;1.8.0 (2016-04-14)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Stack clashing protection
+   &lt;/td&gt;
+   &lt;td&gt;Yes
+   &lt;/td&gt;
+   &lt;td&gt;1.20.0 (2017-08-31)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Read-only relocations and immediate binding
+   &lt;/td&gt;
+   &lt;td&gt;Yes
+   &lt;/td&gt;
+   &lt;td&gt;1.21.0 (2017-10-12)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Heap corruption protection
+   &lt;/td&gt;
+   &lt;td&gt;Yes
+   &lt;/td&gt;
+   &lt;td&gt;1.32.0 (2019-01-17) (via operating system default or specified allocator)
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Stack smashing protection
+   &lt;/td&gt;
+   &lt;td&gt;No
+   &lt;/td&gt;
+   &lt;td&gt;
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Forward-edge control flow protection
+   &lt;/td&gt;
+   &lt;td&gt;No
+   &lt;/td&gt;
+   &lt;td&gt;
+   &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td&gt;Backward-edge control flow protection (e.g., shadow and safe stack)
+   &lt;/td&gt;
+   &lt;td&gt;No
+   &lt;/td&gt;
+   &lt;td&gt;
+   &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:1&quot;&gt;1. See
+&lt;a href=&quot;https://github.com/rust-lang/rust/tree/master/compiler/rustc_target/src/spec&quot;&gt;https://github.com/rust-lang/rust/tree/master/compiler/rustc_target/src/spec&lt;/a&gt;
+for a list of targets and their default options. &lt;a href=&quot;#fnref:1&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;position-independent-executable&quot;&gt;Position-independent executable&lt;/h3&gt;
+
+&lt;p&gt;Position-independent executable increases the difficulty of the use of code
+reuse exploitation techniques, such as return-oriented programming (ROP) and
+variants, by generating position-independent code for the executable, and
+instructing the dynamic linker to load it similarly to a shared object at a
+random load address, thus also benefiting from address-space layout
+randomization (ASLR). This is also referred to as “full ASLR”.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports position-independent executable, and enables it
+by default since version 0.12.0 (2014-10-09)[10]–[13].&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -h target/release/hello-rust | grep Type:
+  Type:                              DYN (Shared object file)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 1. Checking if an executable is a position-independent executable.&lt;/p&gt;
+
+&lt;p&gt;An executable with an object type of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ET_DYN&lt;/code&gt; (i.e., shared object) and not
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ET_EXEC&lt;/code&gt; (i.e., executable) is a position-independent executable (see Fig.
+1).&lt;/p&gt;
+
+&lt;h3 id=&quot;integer-overflow-checks&quot;&gt;Integer overflow checks&lt;/h3&gt;
+
+&lt;p&gt;Integer overflow checks protects programs from undefined and unintended
+behavior (which may cause vulnerabilities) by checking for results of signed
+and unsigned integer computations that cannot be represented in their type,
+resulting in an overflow or wraparound.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports integer overflow checks, and enables it when
+debug assertions are enabled since version 1.0.0 (2015-05-15)[14]–[17], but
+support for it was not completed until version 1.1.0 (2015-06-25)[16]. An
+option to control integer overflow checks was later stabilized in version
+1.17.0 (2017-04-27)[18]–[20].&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;u&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;u8&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;255&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;nd&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;u: {}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;u&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 2. hello-rust-integer program.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cargo run
+   Compiling hello-rust-integer v0.1.0 (/home/rcvalle/hello-rust-integer)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.23s
+     Running `target/debug/hello-rust-integer`
+thread 'main' panicked at 'attempt to add with overflow', src/main.rs:3:23
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 3. Build and execution of hello-rust-integer with debug assertions
+enabled.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cargo run --release
+   Compiling hello-rust-integer v0.1.0 (/home/rcvalle/hello-rust-integer)
+    Finished release [optimized] target(s) in 0.23s
+     Running `target/release/hello-rust-integer`
+u: 0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 4. Build and execution of hello-rust-integer with debug assertions
+disabled.&lt;/p&gt;
+
+&lt;p&gt;Integer overflow checks are enabled when debug assertions are enabled (see
+Fig. 3), and disabled when debug assertions are disabled (see Fig. 4). To
+enable integer overflow checks independently, use the option to control
+integer overflow checks, scoped attributes, or explicit checking methods
+such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;checked_add&lt;/code&gt;&lt;sup id=&quot;fnref:2&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:2&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
+
+&lt;p&gt;It is recommended that explicit wrapping methods such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;wrapping_add&lt;/code&gt; be
+used when wrapping semantics are intended, and that explicit checking and
+wrapping methods always be used when using Unsafe Rust.&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:2&quot;&gt;2. See &lt;a href=&quot;https://doc.rust-lang.org/std/primitive.u32.html&quot;&gt;https://doc.rust-lang.org/std/primitive.u32.html&lt;/a&gt; for more
+information on the checked, overflowing, saturating, and wrapping methods
+(using u32 as an example). &lt;a href=&quot;#fnref:2&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;non-executable-memory-regions&quot;&gt;Non-executable memory regions&lt;/h3&gt;
+
+&lt;p&gt;Non-executable memory regions increase the difficulty of exploitation by
+limiting the memory regions that can be used to execute arbitrary code. Most
+modern processors provide support for the operating system to mark memory
+regions as non executable, but it was previously emulated by software, such
+as in grsecurity/PaX’s
+&lt;a href=&quot;https://pax.grsecurity.net/docs/pageexec.txt&quot;&gt;PAGEEXEC&lt;/a&gt; and
+&lt;a href=&quot;https://pax.grsecurity.net/docs/segmexec.txt&quot;&gt;SEGMEXEC&lt;/a&gt;, on processors that
+did not provide support for it. This is also known as “No Execute (NX) Bit”,
+“Execute Disable (XD) Bit”, “Execute Never (XN) Bit”, and others.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports non-executable memory regions, and enables it by
+default since its initial release, version 0.1 (2012-01-20)[21], [22], but
+has regressed since then[23]–[25], and enforced by default since version
+1.8.0 (2016-04-14)[25].&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -l target/release/hello-rust | grep -A 1 GNU_STACK
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x10
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 5. Checking if non-executable memory regions are enabled for a given
+binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of an element of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; in the program header
+table with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PF_X&lt;/code&gt; (i.e., executable) flag unset indicates non-executable
+memory regions&lt;sup id=&quot;fnref:3&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:3&quot; class=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt; are enabled for a given binary (see Fig. 5).
+Conversely, the presence of an element of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; in the program
+header table with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PF_X&lt;/code&gt; flag set or the absence of an element of type
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; in the program header table indicates non-executable memory
+regions are not enabled for a given binary.&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:3&quot;&gt;3. See the Appendix section for more information on why it affects other
+memory regions besides the stack. &lt;a href=&quot;#fnref:3&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;stack-clashing-protection&quot;&gt;Stack clashing protection&lt;/h3&gt;
+
+&lt;p&gt;Stack clashing protection protects the stack from overlapping with another
+memory region—allowing arbitrary data in both to be overwritten using each
+other—by reading from the stack pages as the stack grows to cause a page
+fault when attempting to read from the guard page/region. This is also
+referred to as “stack probes” or “stack probing”.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports stack clashing protection via stack probing, and
+enables it by default since version 1.20.0 (2017-08-31)[26]–[29].&lt;/p&gt;
+
+&lt;p class=&quot;figure-caption&quot;&gt;&lt;img src=&quot;/assets/2020/09/16/rust-lang-exploit-mitigations/image1.png&quot; alt=&quot;Screenshot listing cross references to __rust_probestack in hello-rust.&quot; title=&quot;Cross references to __rust_probestack in hello-rust.&quot; /&gt;
+Fig. 6. Cross references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__rust_probestack&lt;/code&gt; in hello-rust.&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nd&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello, world!&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;u64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig 7. Modified hello-rust.&lt;/p&gt;
+
+&lt;p class=&quot;figure-caption&quot;&gt;&lt;img src=&quot;/assets/2020/09/16/rust-lang-exploit-mitigations/image2.png&quot; alt=&quot;Screenshot listing cross references to __rust_probestack in modified hello-rust.&quot; title=&quot;Cross references to __rust_probestack in modified hello-rust.&quot; /&gt;
+Fig. 8. Cross references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__rust_probestack&lt;/code&gt; in modified hello-rust.&lt;/p&gt;
+
+&lt;p&gt;To check if stack clashing protection is enabled for a given binary, search
+for cross references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__rust_probestack&lt;/code&gt;. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__rust_probestack&lt;/code&gt; is
+called in the prologue of functions whose stack size is larger than a page
+size (see Fig. 6), and can be forced for illustration purposes by modifying
+the hello-rust example as seen in Fig. 7 and Fig. 8.&lt;/p&gt;
+
+&lt;h3 id=&quot;read-only-relocations-and-immediate-binding&quot;&gt;Read-only relocations and immediate binding&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Read-only relocations&lt;/strong&gt; protect segments containing relocations and
+relocation information (i.e., &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.init_array&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.fini_array&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.dynamic&lt;/code&gt;, and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.got&lt;/code&gt;) from being overwritten by marking these segments read only. This is
+also referred to as “partial RELRO”.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports read-only relocations, and enables it by default
+since version 1.21.0 (2017-10-12)[30], [31].&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -l target/release/hello-rust | grep GNU_RELRO
+  GNU_RELRO      0x000000000002ee00 0x000000000002fe00 0x000000000002fe00
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 9. Checking if read-only relocations is enabled for a given binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of an element of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_RELRO&lt;/code&gt; in the program header
+table indicates read-only relocations are enabled for a given binary (see
+Fig. 9). Conversely, the absence of an element of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_RELRO&lt;/code&gt; in the
+program header table indicates read-only relocations are not enabled for a
+given binary.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Immediate binding&lt;/strong&gt; protects additional segments containing relocations
+(i.e., &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.got.plt&lt;/code&gt;) from being overwritten by instructing the dynamic linker
+to perform all relocations before transferring control to the program during
+startup, so all segments containing relocations can be marked read only
+(when combined with read-only relocations). This is also referred to as
+“full RELRO”.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler supports immediate binding, and enables it by default
+since version 1.21.0 (2017-10-12)[30], [31].&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -d target/release/hello-rust | grep BIND_NOW
+ 0x000000000000001e (FLAGS)              BIND_NOW
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 10. Checking if immediate binding is enabled for a given binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of an element with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DT_BIND_NOW&lt;/code&gt; tag and the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DF_BIND_NOW&lt;/code&gt;
+flag&lt;sup id=&quot;fnref:4&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:4&quot; class=&quot;footnote&quot;&gt;4&lt;/a&gt;&lt;/sup&gt; in the dynamic section indicates immediate
+binding is enabled for a given binary (see Fig. 10). Conversely, the absence
+of an element with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DT_BIND_NOW&lt;/code&gt; tag and the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DF_BIND_NOW&lt;/code&gt; flag in the
+dynamic section indicates immediate binding is not enabled for a given
+binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of both an element of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_RELRO&lt;/code&gt; in the program header
+table and of an element with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DT_BIND_NOW&lt;/code&gt; tag and the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DF_BIND_NOW&lt;/code&gt;
+flag in the dynamic section indicates full RELRO is enabled for a given
+binary (see Fig. 9 and Fig. 10).&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:4&quot;&gt;4. And the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DF_1_NOW&lt;/code&gt; flag for some link editors. &lt;a href=&quot;#fnref:4&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;heap-corruption-protection&quot;&gt;Heap corruption protection&lt;/h3&gt;
+
+&lt;p&gt;Heap corruption protection protects memory allocated dynamically by
+performing several checks, such as checks for corrupted links between list
+elements, invalid pointers, invalid sizes, double/multiple “frees” of the
+same memory allocated, and many corner cases of these. These checks are
+implementation specific, and vary per allocator.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://community.arm.com/developer/ip-products/processors/b/processors-ip-blog/posts/enhancing-memory-safety&quot;&gt;ARM Memory Tagging Extension
+(MTE)&lt;/a&gt;,
+when available, will provide hardware assistance for a probabilistic
+mitigation to detect memory safety violations by tagging memory allocations,
+and automatically checking that the correct tag is used on every memory
+access.&lt;/p&gt;
+
+&lt;p&gt;Rust’s default allocator has historically been
+&lt;a href=&quot;http://jemalloc.net/&quot;&gt;jemalloc&lt;/a&gt;, and it has long been the cause of issues
+and the subject of much discussion[32]–[38]. Consequently, it has been
+removed as the default allocator in favor of the operating system’s standard
+C library default allocator&lt;sup id=&quot;fnref:5&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:5&quot; class=&quot;footnote&quot;&gt;5&lt;/a&gt;&lt;/sup&gt; since version 1.32.0
+(2019-01-17)[39].&lt;/p&gt;
+
+&lt;div class=&quot;language-rust highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;mut&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Box&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;([&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]);&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1026&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;unsafe&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;elem&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.get_unchecked_mut&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+            &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;elem&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0x4141414141414141u64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 11. hello-rust-heap program.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cargo run
+   Compiling hello-rust-heap v0.1.0 (/home/rcvalle/hello-rust-heap)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.25s
+     Running `target/debug/hello-rust-heap`
+free(): invalid next size (normal)
+Aborted
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 12. Build and execution of hello-rust-heap with debug assertions
+enabled.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cargo run --release
+   Compiling hello-rust-heap v0.1.0 (/home/rcvalle/hello-rust-heap)
+    Finished release [optimized] target(s) in 0.25s
+     Running `target/release/hello-rust-heap`
+free(): invalid next size (normal)
+Aborted
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 13. Build and execution of hello-rust-heap with debug assertions
+disabled.&lt;/p&gt;
+
+&lt;p&gt;Heap corruption checks are being performed when using the default allocator
+(i.e., the GNU Allocator) as seen in Fig. 12 and Fig. 13.&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:5&quot;&gt;5. Linux’s standard C library default allocator is the GNU Allocator, which
+is derived from ptmalloc (pthreads malloc) by Wolfram Gloger, which in turn
+is derived from dlmalloc (Doug Lea malloc) by Doug Lea. &lt;a href=&quot;#fnref:5&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;stack-smashing-protection&quot;&gt;Stack smashing protection&lt;/h3&gt;
+
+&lt;p&gt;Stack smashing protection protects programs from stack-based buffer
+overflows by inserting a random guard value between local variables and the
+saved return instruction pointer, and checking if this value has changed
+when returning from a function. This is also known as “Stack Protector” or
+“Stack Smashing Protector (SSP)”.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler does not support stack smashing protection. However, more
+comprehensive alternatives to stack smashing protection exist, such as
+shadow and safe stack (see backward-edge control flow protection).&lt;/p&gt;
+
+&lt;p class=&quot;figure-caption&quot;&gt;&lt;img src=&quot;/assets/2020/09/16/rust-lang-exploit-mitigations/image3.png&quot; alt=&quot;Screenshot listing cross references to __stack_chk_fail in hello-rust.&quot; title=&quot;Cross references to __stack_chk_fail in hello-rust.&quot; /&gt;
+Fig. 14. Cross references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__stack_chk_fail&lt;/code&gt; in hello-rust.&lt;/p&gt;
+
+&lt;p&gt;To check if stack smashing protection is enabled for a given binary, search
+for cross references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__stack_chk_fail&lt;/code&gt;. The only cross references to
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__stack_chk_fail&lt;/code&gt; in hello-rust are from the statically-linked libbacktrace
+library (see Fig. 14).&lt;/p&gt;
+
+&lt;h3 id=&quot;forward-edge-control-flow-protection&quot;&gt;Forward-edge control flow protection&lt;/h3&gt;
+
+&lt;p&gt;Forward-edge control flow protection protects programs from having its
+control flow changed/hijacked by performing checks to ensure that
+destinations of indirect branches are one of their valid destinations in the
+control flow graph. The comprehensiveness of these checks vary per
+implementation. This is also known as “forward-edge control flow integrity
+(CFI)”.&lt;/p&gt;
+
+&lt;p&gt;Newer processors provide hardware assistance for forward-edge control flow
+protection, such as ARM Branch Target Identification (BTI), ARM Pointer
+Authentication, and Intel Indirect Branch Tracking (IBT) as part of Intel
+Control-flow Enforcement Technology (CET). However, ARM BTI and Intel IBT
+-based implementations are less comprehensive than software-based
+implementations such as &lt;a href=&quot;https://clang.llvm.org/docs/ControlFlowIntegrity.html&quot;&gt;LLVM ControlFlowIntegrity
+(CFI)&lt;/a&gt;, and the
+commercially available &lt;a href=&quot;https://grsecurity.net/rap_faq&quot;&gt;grsecurity/PaX Reuse Attack Protector
+(RAP)&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler does not support forward-edge control flow protection on
+Linux&lt;sup id=&quot;fnref:6&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:6&quot; class=&quot;footnote&quot;&gt;6&lt;/a&gt;&lt;/sup&gt;. There is work currently ongoing to add support
+for the &lt;a href=&quot;https://github.com/google/sanitizers&quot;&gt;sanitizers&lt;/a&gt;[40], which may or
+may not include support for LLVM CFI.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -s target/release/hello-rust | grep __cfi_init
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 15. Checking if LLVM CFI is enabled for a given binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__cfi_init&lt;/code&gt; symbol (and references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__cfi_check&lt;/code&gt;)
+indicates that LLVM CFI (i.e., forward-edge control flow protection) is
+enabled for a given binary. Conversely, the absence of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__cfi_init&lt;/code&gt;
+symbol (and references to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__cfi_check&lt;/code&gt;) indicates that LLVM CFI is not
+enabled for a given binary (see Fig. 15).&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:6&quot;&gt;6. It supports Control Flow Guard (CFG) on Windows (see
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/68793&quot;&gt;https://github.com/rust-lang/rust/issues/68793&lt;/a&gt;). &lt;a href=&quot;#fnref:6&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;backward-edge-control-flow-protection&quot;&gt;Backward-edge control flow protection&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Shadow stack&lt;/strong&gt; protects saved return instruction pointers from being
+overwritten by storing a copy of them on a separate (shadow) stack, and
+using these copies as authoritative values when returning from functions.
+This is also known as “ShadowCallStack” and “Return Flow Guard”, and is
+considered an implementation of backward-edge control flow protection (or
+“backward-edge CFI”).&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Safe stack&lt;/strong&gt; protects not only the saved return instruction pointers, but
+also register spills and some local variables from being overwritten by
+storing unsafe variables, such as large arrays, on a separate (unsafe)
+stack, and using these unsafe variables on the separate stack instead. This
+is also known as “SafeStack”, and is also considered an implementation of
+backward-edge control flow protection.&lt;/p&gt;
+
+&lt;p&gt;Both shadow and safe stack are intended to be a more comprehensive
+alternatives to stack smashing protection as they protect the saved return
+instruction pointers (and other data in the case of safe stack) from
+arbitrary writes and non-linear out-of-bounds writes.&lt;/p&gt;
+
+&lt;p&gt;Newer processors provide hardware assistance for backward-edge control flow
+protection, such as ARM Pointer Authentication, and Intel Shadow Stack as
+part of Intel CET.&lt;/p&gt;
+
+&lt;p&gt;The Rust compiler does not support shadow or safe stack. There is work
+currently ongoing to add support for the sanitizers[40], which may or may
+not include support for safe stack&lt;sup id=&quot;fnref:7&quot; role=&quot;doc-noteref&quot;&gt;&lt;a href=&quot;#fn:7&quot; class=&quot;footnote&quot;&gt;7&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -s target/release/hello-rust | grep __safestack_init
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p class=&quot;figure-caption&quot;&gt;Fig. 16. Checking if LLVM SafeStack is enabled for a given binary.&lt;/p&gt;
+
+&lt;p&gt;The presence of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__safestack_init&lt;/code&gt; symbol indicates that LLVM SafeStack
+is enabled for a given binary. Conversely, the absence of the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__safestack_init&lt;/code&gt; symbol indicates that LLVM SafeStack is not enabled for a
+given binary (see Fig. 16).&lt;/p&gt;
+
+&lt;p class=&quot;fn&quot; id=&quot;fn:7&quot;&gt;7. The shadow stack implementation for the AMD64 architecture and
+equivalent in LLVM was removed due to performance and security issues. &lt;a href=&quot;#fnref:7&quot; class=&quot;reversefootnote&quot; role=&quot;doc-backlink&quot;&gt;↩&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;appendix&quot;&gt;Appendix&lt;/h2&gt;
+
+&lt;p&gt;As of the latest version of the &lt;a href=&quot;https://refspecs.linuxfoundation.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/progheader.html&quot;&gt;Linux Standard Base (LSB) Core
+Specification&lt;/a&gt;,
+the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; program header indicates whether the stack should be
+executable, and the absence of this header indicates that the stack should
+be executable. However, the Linux kernel currently sets the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;READ_IMPLIES_EXEC&lt;/code&gt; personality upon loading any executable with the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; program header and the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PF_X &lt;/code&gt;flag set or with the absence of
+this header, resulting in not only the stack, but also all readable virtual
+memory mappings being executable.&lt;/p&gt;
+
+&lt;p&gt;An attempt to fix this &lt;a href=&quot;https://lore.kernel.org/lkml/f298f914-2239-44e4-8aa1-a51282e7fac0@zmail15.collab.prod.int.phx2.redhat.com/&quot;&gt;was made in
+2012&lt;/a&gt;
+(by this author), and another &lt;a href=&quot;https://lore.kernel.org/kernel-hardening/20200327064820.12602-1-keescook@chromium.org/&quot;&gt;was made in
+2020&lt;/a&gt;.
+The former never landed, and the latter partially fixed it, but introduced
+other issues—the absence of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; program header still causes
+not only the stack, but also all readable virtual memory mappings to be
+executable in some architectures, such as IA-32 and equivalent (or causes
+the stack to be non-executable in some architectures, such as AMD64 and
+equivalent, contradicting the LSB).&lt;/p&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;READ_IMPLIES_EXEC&lt;/code&gt; personality needs to be completely separated from
+the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; program header by having a separate option for it (or
+setarch -X could just be used whenever &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;READ_IMPLIES_EXEC&lt;/code&gt; is needed), and
+the absence of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PT_GNU_STACK&lt;/code&gt; program header needs to have more secure
+defaults (unrelated to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;READ_IMPLIES_EXEC&lt;/code&gt;).&lt;/p&gt;
+
+&lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
+
+&lt;ol class=&quot;references&quot;&gt;
+  &lt;li&gt;
+    &lt;p&gt;D. Hosfelt. “Fearless security: memory safety.” Mozilla Hacks.
+&lt;a href=&quot;https://hacks.mozilla.org/2019/01/fearless-security-memory-safety/&quot;&gt;https://hacks.mozilla.org/2019/01/fearless-security-memory-safety/&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;D. Hosfelt. “Fearless security: thread safety.” Mozilla Hacks.
+&lt;a href=&quot;https://hacks.mozilla.org/2019/02/fearless-security-thread-safety/&quot;&gt;https://hacks.mozilla.org/2019/02/fearless-security-thread-safety/&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Klabnik and C. Nichols. “What Is Ownership?.” The Rust Programming
+Language. &lt;a href=&quot;https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html&quot;&gt;https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Klabnik and C. Nichols. “References and Borrowing.” The Rust
+Programming Language.
+&lt;a href=&quot;https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html&quot;&gt;https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Klabnik and C. Nichols. “The Slice Type.” The Rust Programming
+Language. &lt;a href=&quot;https://doc.rust-lang.org/book/ch04-03-slices.html&quot;&gt;https://doc.rust-lang.org/book/ch04-03-slices.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Klabnik and C. Nichols. “Unsafe Rust.” The Rust Programming Language.
+&lt;a href=&quot;https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html&quot;&gt;https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Davidoff. “How Rust’s standard library was vulnerable for years and
+nobody noticed.” Medium.
+&lt;a href=&quot;https://medium.com/@shnatsel/how-rusts-standard-library-was-vulnerable-for-years-and-nobody-noticed-aebf0503c3d6&quot;&gt;https://medium.com/@shnatsel/how-rusts-standard-library-was-vulnerable-for-years-and-nobody-noticed-aebf0503c3d6&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“Improper restriction of operations within the bounds of a memory buffer
+(CWE-119).” MITRE CWE List.
+&lt;a href=&quot;https://cwe.mitre.org/data/definitions/119.html&quot;&gt;https://cwe.mitre.org/data/definitions/119.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“Concurrency issues (CWE-557).” MITRE CWE List.
+&lt;a href=&quot;https://cwe.mitre.org/data/definitions/557.html&quot;&gt;https://cwe.mitre.org/data/definitions/557.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;K. McAllister. “Memory exploit mitigations #15179.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/15179&quot;&gt;https://github.com/rust-lang/rust/issues/15179&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;K. McAllister. “RFC: Memory exploit mitigation #145.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rfcs/pull/145&quot;&gt;https://github.com/rust-lang/rfcs/pull/145&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;K. McAllister. “RFC: Memory exploit mitigation.” GitHub.
+&lt;a href=&quot;https://github.com/kmcallister/rfcs/blob/hardening/active/0000-memory-exploit-mitigation.md&quot;&gt;https://github.com/kmcallister/rfcs/blob/hardening/active/0000-memory-exploit-mitigation.md&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;D. Micay. “Enable PIE by default on Linux for full ASLR #16340.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/pull/16340&quot;&gt;https://github.com/rust-lang/rust/pull/16340&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;N. Matsakis. “Integer overflow #560.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rfcs/pull/560&quot;&gt;https://github.com/rust-lang/rfcs/pull/560&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;G. Lehel and N. Matsakis. “Integer overflow.” GitHub.
+&lt;a href=&quot;https://rust-lang.github.io/rfcs/0560-integer-overflow.html&quot;&gt;https://rust-lang.github.io/rfcs/0560-integer-overflow.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Turon. “Tracking issue for integer overflow (RFC 560) #22020.”
+GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/issues/22020&quot;&gt;https://github.com/rust-lang/rust/issues/22020&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;H. Wilson. “Myths and legends about integer overflow in Rust.” Huon on
+the Internet.
+&lt;a href=&quot;http://huonw.github.io/blog/2016/04/myths-and-legends-about-integer-overflow-in-rust/&quot;&gt;http://huonw.github.io/blog/2016/04/myths-and-legends-about-integer-overflow-in-rust/&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;B. Anderson. “Stabilize -C overflow-checks #1535.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rfcs/pull/1535&quot;&gt;https://github.com/rust-lang/rfcs/pull/1535&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;B. Anderson. “Stable overflow checks.” GitHub.
+&lt;a href=&quot;https://github.com/brson/rfcs/blob/overflow/text/0000-stable-overflow-checks.md&quot;&gt;https://github.com/brson/rfcs/blob/overflow/text/0000-stable-overflow-checks.md&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;N. Froyd. “Add -C overflow-checks option #40037.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/pull/40037&quot;&gt;https://github.com/rust-lang/rust/pull/40037&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;R. Á. de Espíndola. “rustc requires executable stack #798.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/798&quot;&gt;https://github.com/rust-lang/rust/issues/798&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Seipp. “Make sure librustrt.so is linked with a non-executable stack.
+#1066.” GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/pull/1066&quot;&gt;https://github.com/rust-lang/rust/pull/1066&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;D. Micay. “Rust binaries should not have an executable stack #5643.”
+GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/issues/5643&quot;&gt;https://github.com/rust-lang/rust/issues/5643&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;D. Micay. “Mark the assembly object stacks as non-executable #5647.”
+GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/pull/5647&quot;&gt;https://github.com/rust-lang/rust/pull/5647&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Clark. “Explicitly disable stack execution on linux and bsd #30859.”
+GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/pull/30859&quot;&gt;https://github.com/rust-lang/rust/pull/30859&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;“Replace stack overflow checking with stack probes #16012.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/16012&quot;&gt;https://github.com/rust-lang/rust/issues/16012&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;B. Striegel. “Extend stack probe support to non-tier-1 platforms, and
+clarify policy for mitigating LLVM-dependent unsafety #43241.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/43241&quot;&gt;https://github.com/rust-lang/rust/issues/43241&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “rustc: Implement stack probes for x86 #42816.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/pull/42816&quot;&gt;https://github.com/rust-lang/rust/pull/42816&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “Add __rust_probestack intrinsic #175.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/compiler-builtins/pull/175&quot;&gt;https://github.com/rust-lang/compiler-builtins/pull/175&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;B. Anderson. “Consider applying -Wl,-z,relro or -Wl,-z,relro,-z,now by
+default #29877.” GitHub. &lt;a href=&quot;https://github.com/rust-lang/rust/issues/29877&quot;&gt;https://github.com/rust-lang/rust/issues/29877&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;J. Löthberg. “Add support for full RELRO #43170.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/pull/43170&quot;&gt;https://github.com/rust-lang/rust/pull/43170&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;N. Matsakis. “Allocators in Rust.” Baby Steps.
+&lt;a href=&quot;http://smallcultfollowing.com/babysteps/blog/2014/11/14/allocators-in-rust/&quot;&gt;http://smallcultfollowing.com/babysteps/blog/2014/11/14/allocators-in-rust/&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “RFC: Allow changing the default allocator #1183.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rfcs/pull/1183&quot;&gt;https://github.com/rust-lang/rfcs/pull/1183&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “RFC: Swap out jemalloc.” GitHub.
+&lt;a href=&quot;https://rust-lang.github.io/rfcs/1183-swap-out-jemalloc.html&quot;&gt;https://rust-lang.github.io/rfcs/1183-swap-out-jemalloc.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “Tracking issue for changing the global, default allocator
+(RFC 1974) #27389.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/27389&quot;&gt;https://github.com/rust-lang/rust/issues/27389&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;S. Fackler. “Prepare global allocators for stabilization #1974.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rfcs/pull/1974&quot;&gt;https://github.com/rust-lang/rfcs/pull/1974&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “RFC: Global allocators.” GitHub.
+&lt;a href=&quot;https://rust-lang.github.io/rfcs/1974-global-allocators.html&quot;&gt;https://rust-lang.github.io/rfcs/1974-global-allocators.html&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;B. Anderson. “Switch the default global allocator to System, remove
+alloc_jemalloc, use jemallocator in rustc #36963.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/36963&quot;&gt;https://github.com/rust-lang/rust/issues/36963&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;A. Crichton. “Remove the alloc_jemalloc crate #55238.” GitHub.
+&lt;a href=&quot;https://github.com/rust-lang/rust/pull/55238&quot;&gt;https://github.com/rust-lang/rust/pull/55238&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;J. Aparicio. 2017. “Tracking issue for sanitizer support #39699.”
+&lt;a href=&quot;https://github.com/rust-lang/rust/issues/39699&quot;&gt;https://github.com/rust-lang/rust/issues/39699&lt;/a&gt;.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+      </content>
+      <id>https://rcvalle.com/blog/2020/09/16/rust-lang-exploit-mitigations/</id>
+      <link href="https://rcvalle.com/blog/2020/09/16/rust-lang-exploit-mitigations/"/>
+      <published>2020-09-16T00:00:00-07:00</published>
+      <title>Rust programming language exploit mitigations</title>
+      
+        <updated>2020-11-24T00:00:00-08:00</updated>
+      
+    </entry>
+  
+</feed>

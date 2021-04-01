@@ -1,0 +1,14 @@
+{
+	"version": 3,
+	"file": "navbar-dark.css",
+	"sources": [
+		"navbar-dark.scss",
+		"_sass/_navbar_dark.scss"
+	],
+	"sourcesContent": [
+		"@import 'navbar_dark';\n",
+		".navbar {\n  --color-gray-100: #f8f9fa;\n  --color-gray-900: #212529;\n  background: var(--color-gray-900);\n  font-size: 1rem;\n  padding: .5rem 1rem;\n\n  .navbar-brand {\n    color: var(--color-gray-100);\n    font-size: 1.125rem;\n    font-weight: 400;\n    margin-right: 1rem;\n    padding: .5rem 1rem .5rem 0;\n  }\n\n  .navbar-collapse {\n    .navbar-nav {\n      .nav-item.nav-link {\n        color: var(--color-gray-100);\n        padding: .5rem 1rem .5rem 0;\n      }\n\n      .nav-item.nav-link.active {\n      }\n    }\n  }\n\n  .navbar-toggler {\n    .navbar-toggler-icon {\n      --navbar-toggler-color: var(--color-gray-100);\n    }\n  }\n}\n"
+	],
+	"names": [],
+	"mappings": "ACAA,AAAA,OAAO,CAAC,EACN,gBAAgB,CAAA,QAAC,EACjB,gBAAgB,CAAA,QAAC,EACjB,UAAU,EAAE,qBAAqB,EACjC,SAAS,EAAE,IAAI,EACf,OAAO,EAAE,UAAU,GA2BpB;;AAhCD,AAOE,OAPK,CAOL,aAAa,CAAC,EACZ,KAAK,EAAE,qBAAqB,EAC5B,SAAS,EAAE,QAAQ,EACnB,WAAW,EAAE,GAAG,EAChB,YAAY,EAAE,IAAI,EAClB,OAAO,EAAE,kBAAkB,GAC5B;;AAbH,AAiBM,OAjBC,CAeL,gBAAgB,CACd,WAAW,CACT,SAAS,AAAA,SAAS,CAAC,EACjB,KAAK,EAAE,qBAAqB,EAC5B,OAAO,EAAE,kBAAkB,GAC5B;;AApBP,AA4BI,OA5BG,CA2BL,eAAe,CACb,oBAAoB,CAAC,EACnB,sBAAsB,CAAA,sBAAC,GACxB"
+}

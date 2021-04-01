@@ -1,0 +1,14 @@
+{
+	"version": 3,
+	"file": "navbar.css",
+	"sources": [
+		"navbar.scss",
+		"_sass/_navbar.scss"
+	],
+	"sourcesContent": [
+		"@import 'navbar';\n",
+		".navbar {\n  align-items: center;\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: space-between;\n\n  .navbar-collapse {\n    flex-basis: 100%;\n\n    .navbar-nav {\n      display: flex;\n      flex-direction: column;\n    }\n  }\n\n  @media (min-width: 992px) {\n    &.navbar-expand-lg {\n      justify-content: flex-start;\n\n      .navbar-collapse {\n        display: block !important;\n        flex-basis: auto;\n\n        .navbar-nav {\n          flex-direction: row;\n        }\n      }\n\n      .navbar-toggler {\n        display: none;\n      }\n    }\n  }\n\n  .collapse:not(.show) {\n    display: none;\n  }\n\n  .collapsing {\n    height: 0;\n    overflow: hidden;\n    transition: height .35s ease;\n  }\n}\n"
+	],
+	"names": [],
+	"mappings": "ACAA,AAAA,OAAO,CAAC,EACN,WAAW,EAAE,MAAM,EACnB,OAAO,EAAE,IAAI,EACb,SAAS,EAAE,IAAI,EACf,eAAe,EAAE,aAAa,GAuC/B;;AA3CD,AAME,OANK,CAML,gBAAgB,CAAC,EACf,UAAU,EAAE,IAAI,GAMjB;;AAbH,AASI,OATG,CAML,gBAAgB,CAGd,WAAW,CAAC,EACV,OAAO,EAAE,IAAI,EACb,cAAc,EAAE,MAAM,GACvB;;AAGH,MAAM,mBACJ,GAhBJ,AAgBI,OAhBG,AAgBF,iBAAiB,CAAC,EACjB,eAAe,EAAE,UAAU,GAc5B,CA/BL,AAmBM,OAnBC,AAgBF,iBAAiB,CAGhB,gBAAgB,CAAC,EACf,OAAO,EAAE,gBAAgB,EACzB,UAAU,EAAE,IAAI,GAKjB,CA1BP,AAuBQ,OAvBD,AAgBF,iBAAiB,CAGhB,gBAAgB,CAId,WAAW,CAAC,EACV,cAAc,EAAE,GAAG,GACpB,CAzBT,AA4BM,OA5BC,AAgBF,iBAAiB,CAYhB,eAAe,CAAC,EACd,OAAO,EAAE,IAAI,GACd,EACF;;AA/BL,AAkCE,OAlCK,CAkCL,SAAS,CAAA,GAAK,CAAA,KAAK,EAAE,EACnB,OAAO,EAAE,IAAI,GACd;;AApCH,AAsCE,OAtCK,CAsCL,WAAW,CAAC,EACV,MAAM,EAAE,CAAC,EACT,QAAQ,EAAE,MAAM,EAChB,UAAU,EAAE,gBAAgB,GAC7B"
+}

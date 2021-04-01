@@ -1,0 +1,103 @@
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap");
+:root { --color-gray-100: #f8f9fa; --color-gray-300: #dee2e6; --color-gray-600: #6c757d; --color-gray-900: #212529; --color-primary: var(--color-gray-600); --color-secondary: var(--color-gray-600); --color-text: var(--color-gray-900); --font-family-monospace: 'Inconsolata', monospace; --font-family-primary: 'Roboto', sans-serif; --font-size-primary: 1.125rem; --line-height: 1.875rem; }
+
+body { font-family: var(--font-family-primary); font-size: var(--font-size-primary); font-weight: 300; line-height: var(--line-height); text-rendering: optimizeLegibility; }
+
+h1, h2, h3, h4, h5, h6 { font-weight: 400; }
+
+h1 { font-size: 2.281rem; line-height: 3rem; vertical-align: bottom; }
+
+h2 { font-size: 2.027rem; line-height: 3rem; vertical-align: bottom; }
+
+h3 { font-size: 1.802rem; line-height: 2rem; vertical-align: bottom; }
+
+h4 { font-size: 1.602rem; line-height: 2rem; vertical-align: bottom; }
+
+h5 { font-size: 1.424rem; line-height: 2rem; vertical-align: bottom; }
+
+h6 { font-size: 1.266rem; line-height: 2rem; vertical-align: bottom; }
+
+pre { font-family: var(--font-family-monospace); }
+
+a, a:hover { color: var(--color-primary); text-decoration: none; }
+
+main a, main a:hover { color: var(--color-text); text-decoration: underline; }
+
+code, samp, kbd { font-family: var(--font-family-monospace); }
+
+h1[itemprop="headline"] a, h1[itemprop="headline"] a:hover { text-decoration: none; }
+
+p[itemprop="description"] { color: var(--color-secondary); display: none; }
+
+p[itemprop="description"] a, p[itemprop="description"] a:hover { color: var(--color-secondary); }
+
+div[itemprop="articleBody"] img { display: block; margin-left: 50%; transform: translateX(-50%); }
+
+span[itemprop="keywords"] a, span[itemprop="keywords"] a:hover { color: var(--color-primary); text-decoration: none; }
+
+.container { max-width: 768px; }
+
+.fn { color: var(--color-secondary); }
+
+.fn a, .fn a:hover { color: var(--color-secondary); }
+
+.highlight { background-color: var(--color-gray-100); margin: 0 !important; padding: .5rem; }
+
+.lead { font-size: 1.266rem; line-height: 32px; }
+
+.pagination { display: flex; margin-bottom: 1rem; }
+
+.pagination .page-item .page-link { display: block; padding: .25rem .75rem; position: relative; }
+
+.pagination .page-item .page-link:hover { background-color: var(--color-gray-300); }
+
+.pagination .page-item.active .page-link { background-color: var(--color-primary); color: var(--color-gray-100); font-weight: 400; }
+
+.references { overflow-wrap: break-word; }
+
+.table { margin-bottom: 1rem; }
+
+.table td { border-bottom: 1px solid var(--color-gray-300); padding: .5rem; }
+
+.table-title { margin-bottom: .5rem; text-align: center; }
+
+.navbar { align-items: center; display: flex; flex-wrap: wrap; justify-content: space-between; }
+
+.navbar .navbar-collapse { flex-basis: 100%; }
+
+.navbar .navbar-collapse .navbar-nav { display: flex; flex-direction: column; }
+
+@media (min-width: 992px) { .navbar.navbar-expand-lg { justify-content: flex-start; } .navbar.navbar-expand-lg .navbar-collapse { display: block !important; flex-basis: auto; } .navbar.navbar-expand-lg .navbar-collapse .navbar-nav { flex-direction: row; } .navbar.navbar-expand-lg .navbar-toggler { display: none; } }
+
+.navbar .collapse:not(.show) { display: none; }
+
+.navbar .collapsing { height: 0; overflow: hidden; transition: height .35s ease; }
+
+.navbar { --color-gray-100: #f8f9fa; --color-gray-900: #212529; background: var(--color-gray-100); font-size: 1rem; padding: .5rem 1rem; }
+
+.navbar .navbar-brand { color: var(--color-gray-900); font-size: 1.125rem; font-weight: 400; margin-right: 1rem; padding: .5rem 1rem .5rem 0; }
+
+.navbar .navbar-collapse .navbar-nav .nav-item.nav-link { color: var(--color-gray-900); padding: .5rem 1rem .5rem 0; }
+
+.navbar .navbar-toggler .navbar-toggler-icon { --navbar-toggler-color: var(--color-gray-900); }
+
+.navbar .navbar-toggler { --ease-in-cubic: cubic-bezier(.55, .055, .675, .19); --ease-out-cubic: cubic-bezier(.215, .61, .355, 1); --ease-parabolic-fall: cubic-bezier(.33333, 0, .66667, .33333); --ease-parabolic-rise: cubic-bezier(.33333, .66667, .66667, 1); --toggler-icon-height: 22px; --toggler-icon-width: 22px; background: none !important; border: none !important; border-radius: 0 !important; height: var(--toggler-icon-height); padding: 0 !important; position: relative; width: var(--toggler-icon-width); }
+
+.navbar .navbar-toggler .navbar-toggler-icon { position: absolute; top: 10px; transform: rotate(-45deg); transition: transform 0.13s var(--ease-in-cubic) 0.13s; }
+
+.navbar .navbar-toggler .navbar-toggler-icon, .navbar .navbar-toggler .navbar-toggler-icon::after, .navbar .navbar-toggler .navbar-toggler-icon::before { background-color: var(--navbar-toggler-color); display: block; height: 2px; position: absolute; width: var(--toggler-icon-width); }
+
+.navbar .navbar-toggler .navbar-toggler-icon::after, .navbar .navbar-toggler .navbar-toggler-icon::before { content: ""; }
+
+.navbar .navbar-toggler .navbar-toggler-icon::after { opacity: 0; top: 0; transition: opacity 0.1s linear 0.22s, top 0.2s var(--ease-parabolic-fall); }
+
+.navbar .navbar-toggler .navbar-toggler-icon::before { top: 0; transform: rotate(-90deg); transition: top 0.2s var(--ease-parabolic-fall), transform 0.13s var(--ease-out-cubic) 0.26s; }
+
+.navbar .navbar-toggler.collapsed .navbar-toggler-icon { top: 10px; transform: rotate(0); transition: transform 0.13s var(--ease-out-cubic) 0.22s; }
+
+.navbar .navbar-toggler.collapsed .navbar-toggler-icon::after { opacity: 1; top: 6px; transition: opacity 0.1s linear, top 0.2s var(--ease-parabolic-rise) 0.2s; }
+
+.navbar .navbar-toggler.collapsed .navbar-toggler-icon::before { top: -6px; transform: rotate(0); transition: top 0.2s var(--ease-parabolic-rise) 0.2s, transform 0.13s var(--ease-in-cubic); }
+
+/*# sourceMappingURL=custom.css.map */

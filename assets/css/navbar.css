@@ -1,0 +1,13 @@
+.navbar { align-items: center; display: flex; flex-wrap: wrap; justify-content: space-between; }
+
+.navbar .navbar-collapse { flex-basis: 100%; }
+
+.navbar .navbar-collapse .navbar-nav { display: flex; flex-direction: column; }
+
+@media (min-width: 992px) { .navbar.navbar-expand-lg { justify-content: flex-start; } .navbar.navbar-expand-lg .navbar-collapse { display: block !important; flex-basis: auto; } .navbar.navbar-expand-lg .navbar-collapse .navbar-nav { flex-direction: row; } .navbar.navbar-expand-lg .navbar-toggler { display: none; } }
+
+.navbar .collapse:not(.show) { display: none; }
+
+.navbar .collapsing { height: 0; overflow: hidden; transition: height .35s ease; }
+
+/*# sourceMappingURL=navbar.css.map */

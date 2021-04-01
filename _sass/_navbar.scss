@@ -1,0 +1,44 @@
+.navbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  .navbar-collapse {
+    flex-basis: 100%;
+
+    .navbar-nav {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  @media (min-width: 992px) {
+    &.navbar-expand-lg {
+      justify-content: flex-start;
+
+      .navbar-collapse {
+        display: block !important;
+        flex-basis: auto;
+
+        .navbar-nav {
+          flex-direction: row;
+        }
+      }
+
+      .navbar-toggler {
+        display: none;
+      }
+    }
+  }
+
+  .collapse:not(.show) {
+    display: none;
+  }
+
+  .collapsing {
+    height: 0;
+    overflow: hidden;
+    transition: height .35s ease;
+  }
+}

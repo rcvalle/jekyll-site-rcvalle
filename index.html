@@ -1,0 +1,25 @@
+---
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Refresh" content="0; URL={{ "/blog/" | relative_url }}">
+    {% if site.author %}
+      <meta name="author" content="{{ site.author }}">
+    {% endif %}
+    {% if site.description %}
+      <meta name="description" content="{{ site.description }}">
+    {% endif %}
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:creator" content="@rcvalle">
+    <meta name="twitter:site" content="@rcvalle">
+    <meta property="og:description" content="{{ site.description }}">
+    <meta property="og:image" content="https://www.gravatar.com/avatar/21ee6dc146e48d65807c46aca8b8d3d6.jpg?s=600">
+    <meta property="og:title" content="Ramon de C Valle">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rcvalle.com">
+  </head>
+  <body>
+    {% include analytics.html %}
+  </body>
+</html>

@@ -1,0 +1,23 @@
+analytics: UA-187301830-1
+baseurl: jekyll-site-rcvalle
+categories_dir: /blog/category/
+description:
+disqus_shortname: rcvalle
+excerpts: false
+exclude:
+  - "CONTRIBUTING*"
+  - "Gemfile*"
+  - "LICENSE*"
+  - "README*"
+gtag: G-63YYV7T3EM
+paginate: 3
+paginate_path: /blog/pages/:num/
+permalink: /blog/:year/:month/:day/:title/
+plugins:
+  - jekyll-paginate
+sass:
+  # style: compressed
+tags_dir: /blog/tag/
+theme: jekyll-theme-bootstrap5
+title: rcvalle
+url: https://rcvalle.github.io/jekyll-site-rcvalle/
